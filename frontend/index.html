@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NeuroScan AI — Brain MRI Screening Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#121a2b; --panel2:#0f1626; --border:#22304a;
+    --text:#e7ecf5; --muted:#8ea0c0; --accent:#38bdf8; --accent2:#22d3ee;
+    --good:#34d399; --warn:#fbbf24; --bad:#f87171; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:
+    radial-gradient(1200px 600px at 10% -10%, #10203a 0%, var(--bg) 60%) fixed;color:var(--text);}
+  .shell{display:grid;grid-template-columns:230px 1fr;min-height:100vh;}
+  .sidebar{background:var(--panel2);border-right:1px solid var(--border);padding:24px 18px;position:sticky;top:0;height:100vh;}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
+  .brand .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#04121f;}
+  .brand span{font-weight:700;font-size:16px;letter-spacing:.2px;}
+  .nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--muted);text-decoration:none;font-size:14px;margin-bottom:4px;cursor:pointer;}
+  .nav a.active,.nav a:hover{background:#17233b;color:var(--text);}
+  .main{padding:26px 32px 60px;max-width:1200px;}
+  .disclaimer{background:#2a1f0d;border:1px solid #5a4517;color:#f4d58d;padding:12px 16px;border-radius:12px;font-size:13px;margin-bottom:22px;line-height:1.5;}
+  h1{font-size:22px;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:24px;}
+  .grid{display:grid;gap:18px;}
+  .grid.cols-3{grid-template-columns:repeat(3,1fr);}
+  .grid.cols-2{grid-template-columns:1.1fr .9fr;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
+  .card h3{margin:0 0 14px;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+  .stat{font-size:30px;font-weight:800;}
+  .stat.small{font-size:20px;}
+  .drop{border:2px dashed var(--border);border-radius:var(--radius);padding:34px;text-align:center;cursor:pointer;transition:.2s;background:#0d1526;}
+  .drop:hover,.drop.drag{border-color:var(--accent);background:#0e1c31;}
+  .drop p{margin:8px 0 0;color:var(--muted);font-size:13px;}
+  .drop .icon{font-size:34px;}
+  input[type=file]{display:none;}
+  .btn{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#04121f;font-weight:700;padding:10px 18px;border-radius:10px;cursor:pointer;font-size:14px;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn.ghost{background:transparent;border:1px solid var(--border);color:var(--text);font-weight:600;}
+  input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:#0d1526;color:var(--text);font-size:14px;margin-top:8px;}
+  label.small{font-size:12px;color:var(--muted);}
+  .result-hero{display:flex;align-items:center;gap:16px;padding:16px;border-radius:12px;margin-bottom:14px;}
+  .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;}
+  .badge.good{background:rgba(52,211,153,.15);color:var(--good);}
+  .badge.warn{background:rgba(251,191,36,.15);color:var(--warn);}
+  .badge.bad{background:rgba(248,113,113,.15);color:var(--bad);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--border);}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;}
+  tr:hover{background:#0f1a2e;cursor:pointer;}
+  .thumb{width:38px;height:38px;border-radius:8px;object-fit:cover;background:#0d1526;}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;}
+  .bar-track{flex:1;height:10px;background:#0d1526;border-radius:6px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+  .empty{color:var(--muted);font-size:13px;text-align:center;padding:30px 0;}
+  .row-actions{display:flex;gap:8px;margin-top:14px;}
+  canvas{max-height:220px;}
+  .footer-note{color:var(--muted);font-size:12px;margin-top:30px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="sidebar">
+    <div class="brand"><div class="logo">N</div><span>NeuroScan AI</span></div>
+    <div class="nav">
+      <a class="active" data-tab="dashboard">🧠 Dashboard</a>
+      <a data-tab="history">🗂 Scan History</a>
+      <a data-tab="about">ℹ️ About the Model</a>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="disclaimer">
+      ⚠️ <strong>Research prototype — not a medical device.</strong> This tool provides an AI-generated
+      screening estimate only. It has not been clinically validated and must never be used as a substitute
+      for evaluation by a qualified radiologist or physician.
+    </div>
+
+    <div id="tab-dashboard">
+      <h1>Brain MRI Screening</h1>
+      <div class="sub">Upload an MRI slice to run the 2-stage classifier: tumor detection, then subtype identification.</div>
+
+      <div class="grid cols-3" style="margin-bottom:18px;">
+        <div class="card"><h3>Total Scans</h3><div class="stat" id="stat-total">0</div></div>
+        <div class="card"><h3>Tumors Flagged</h3><div class="stat" id="stat-tumors">0</div></div>
+        <div class="card"><h3>Most Common Type</h3><div class="stat small" id="stat-common">—</div></div>
+      </div>
+
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>Upload MRI Scan</h3>
+          <div class="drop" id="drop">
+            <div class="icon">📤</div>
+            <strong>Drop an MRI image here or click to browse</strong>
+            <p>PNG / JPG. Grayscale or RGB axial slices work best.</p>
+            <input type="file" id="fileInput" accept="image/*" />
+          </div>
+          <label class="small">Patient label / note (optional)</label>
+          <input type="text" id="patientLabel" placeholder="e.g. Patient-014, follow-up scan" />
+          <div class="row-actions">
+            <button class="btn" id="analyzeBtn" disabled>Analyze Scan</button>
+            <button class="btn ghost" id="clearBtn">Clear</button>
+          </div>
+          <div id="previewWrap" style="margin-top:14px;display:none;">
+            <img id="previewImg" style="max-width:100%;border-radius:10px;border:1px solid var(--border);" />
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Result</h3>
+          <div id="resultEmpty" class="empty">Upload and analyze a scan to see results here.</div>
+          <div id="resultBody" style="display:none;">
+            <div class="result-hero" id="resultHero"></div>
+            <div id="stage1Block"></div>
+            <div id="stage2Block" style="margin-top:16px;"></div>
+            <canvas id="confChart"></canvas>
+            <div class="row-actions">
+              <button class="btn ghost" id="downloadReportBtn">Download Report (.txt)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-history" style="display:none;">
+      <h1>Scan History</h1>
+      <div class="sub">All scans analyzed in this session, most recent first.</div>
+      <div class="card">
+        <table>
+          <thead><tr><th></th><th>ID</th><th>File</th><th>Label</th><th>Date</th><th>Verdict</th></tr></thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+        <div id="historyEmpty" class="empty" style="display:none;">No scans yet — analyze one from the Dashboard tab.</div>
+      </div>
+    </div>
+
+    <div id="tab-about" style="display:none;">
+      <h1>About the Model</h1>
+      <div class="card" style="line-height:1.7;font-size:14px;">
+        <p><strong>Architecture:</strong> Two independent EfficientNet-B0 convolutional networks, run in sequence.</p>
+        <p><strong>Stage 1 — Tumor Screening (binary):</strong> Outputs a calibrated probability that the slice
+        contains a tumor. The decision threshold was deliberately tuned low (favoring sensitivity over specificity)
+        so that true tumors are very unlikely to be missed, at the cost of more false positives — an appropriate
+        trade-off for a screening tool.</p>
+        <p><strong>Stage 2 — Subtype Classification (3-class):</strong> Only runs if Stage 1 flags a tumor.
+        Classifies the finding as <em>glioma</em>, <em>meningioma</em>, or <em>pituitary</em> tumor.</p>
+        <p><strong>Out-of-distribution (OOD) detection:</strong> Both stages compute an energy score from the
+        network's logits. If an uploaded image doesn't statistically resemble the brain MRI slices the model was
+        trained on (e.g. a non-MRI photo, a heavily corrupted scan), it is flagged as uncertain rather than
+        forced into a confident-sounding but meaningless prediction.</p>
+        <p><strong>Calibration:</strong> Both stages apply temperature scaling to their logits before producing
+        probabilities, so the confidence values reported are calibrated estimates rather than raw softmax output.</p>
+      </div>
+    </div>
+
+    <div class="footer-note">NeuroScan AI Dashboard · Local research build · Not for clinical use</div>
+  </div>
+</div>
+
+<script>
+const API = "";
+let lastResult = null;
+let confChartInstance = null;
+
+// Tabs
+document.querySelectorAll(".nav a").forEach(a=>{
+  a.addEventListener("click", ()=>{
+    document.querySelectorAll(".nav a").forEach(x=>x.classList.remove("active"));
+    a.classList.add("active");
+    ["dashboard","history","about"].forEach(t=>{
+      document.getElementById("tab-"+t).style.display = (t===a.dataset.tab)?"block":"none";
+    });
+    if(a.dataset.tab==="history") loadHistory();
+  });
+});
+
+// Upload handling
+const drop = document.getElementById("drop");
+const fileInput = document.getElementById("fileInput");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const previewWrap = document.getElementById("previewWrap");
+const previewImg = document.getElementById("previewImg");
+let selectedFile = null;
+
+drop.addEventListener("click", ()=>fileInput.click());
+drop.addEventListener("dragover", e=>{e.preventDefault();drop.classList.add("drag");});
+drop.addEventListener("dragleave", ()=>drop.classList.remove("drag"));
+drop.addEventListener("drop", e=>{
+  e.preventDefault(); drop.classList.remove("drag");
+  if(e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener("change", e=>{
+  if(e.target.files.length) setFile(e.target.files[0]);
+});
+
+function setFile(file){
+  selectedFile = file;
+  analyzeBtn.disabled = false;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    previewImg.src = e.target.result;
+    previewWrap.style.display = "block";
+  };
+  reader.readAsDataURL(file);
+}
+
+document.getElementById("clearBtn").addEventListener("click", ()=>{
+  selectedFile = null;
+  fileInput.value = "";
+  previewWrap.style.display = "none";
+  analyzeBtn.disabled = true;
+  document.getElementById("patientLabel").value = "";
+  document.getElementById("resultBody").style.display = "none";
+  document.getElementById("resultEmpty").style.display = "block";
+});
+
+analyzeBtn.addEventListener("click", async ()=>{
+  if(!selectedFile) return;
+  analyzeBtn.disabled = true;
+  analyzeBtn.textContent = "Analyzing...";
+  const fd = new FormData();
+  fd.append("file", selectedFile);
+  fd.append("patient_label", document.getElementById("patientLabel").value);
+  try{
+    const res = await fetch(API+"/api/predict", {method:"POST", body:fd});
+    if(!res.ok){
+      const err = await res.json();
+      alert("Error: "+(err.detail||"analysis failed"));
+      return;
+    }
+    const data = await res.json();
+    lastResult = data;
+    renderResult(data);
+    loadStats();
+  }catch(e){
+    alert("Request failed: "+e.message);
+  }finally{
+    analyzeBtn.disabled = false;
+    analyzeBtn.textContent = "Analyze Scan";
+  }
+});
+
+function verdictBadge(verdict){
+  if(verdict==="no_tumor_detected") return {label:"No Tumor Detected", cls:"good"};
+  if(verdict==="uncertain_not_brain_mri") return {label:"Uncertain / Not a Brain MRI", cls:"warn"};
+  if(verdict==="tumor_detected_type_uncertain") return {label:"Tumor Detected — Type Uncertain", cls:"warn"};
+  if(verdict && verdict.startsWith("tumor_detected_")) return {label:"Tumor Detected: "+verdict.replace("tumor_detected_",""), cls:"bad"};
+  return {label:verdict||"Unknown", cls:"warn"};
+}
+
+function renderResult(data){
+  document.getElementById("resultEmpty").style.display = "none";
+  document.getElementById("resultBody").style.display = "block";
+
+  const v = verdictBadge(data.final_verdict);
+  document.getElementById("resultHero").innerHTML = `
+    <div style="flex:1;">
+      <div class="badge ${v.cls}">${v.label}</div>
+      <div style="color:var(--muted);font-size:12px;margin-top:6px;">Scan #${data.id} · ${data.filename}</div>
+    </div>`;
+
+  const s1 = data.stage1;
+  document.getElementById("stage1Block").innerHTML = `
+    <strong>Stage 1 — Tumor Screening</strong>
+    <div class="bar-row" style="margin-top:8px;">
+      <span style="width:110px;">Tumor Prob.</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${(s1.probability_tumor*100).toFixed(1)}%"></div></div>
+      <span>${(s1.probability_tumor*100).toFixed(1)}%</span>
+    </div>
+    <div style="font-size:12px;color:var(--muted);">Threshold: ${(s1.decision_threshold*100).toFixed(2)}% · OOD flag: ${s1.out_of_distribution}</div>
+  `;
+
+  const s2 = data.stage2;
+  let s2html = "";
+  const chartLabels = [], chartData = [];
+  if(s2){
+    s2html += `<strong>Stage 2 — Subtype Classification</strong>`;
+    for(const [cls, p] of Object.entries(s2.class_probabilities)){
+      chartLabels.push(cls); chartData.push((p*100).toFixed(1));
+    }
+    s2html += `<div style="font-size:12px;color:var(--muted);margin-top:6px;">Predicted: <strong style="color:var(--text);">${s2.predicted_class}</strong> (${(s2.confidence*100).toFixed(1)}% confidence) · OOD flag: ${s2.out_of_distribution}</div>`;
+  } else {
+    s2html = `<span style="color:var(--muted);font-size:13px;">Stage 2 not run (no tumor flagged in Stage 1, or image was out-of-distribution).</span>`;
+  }
+  document.getElementById("stage2Block").innerHTML = s2html;
+
+  const ctx = document.getElementById("confChart");
+  if(confChartInstance) confChartInstance.destroy();
+  if(chartLabels.length){
+    confChartInstance = new Chart(ctx, {
+      type: "bar",
+      data: {labels: chartLabels, datasets: [{label:"Confidence %", data: chartData, backgroundColor:["#38bdf8","#22d3ee","#818cf8"]}]},
+      options: {plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100, ticks:{color:"#8ea0c0"}}, x:{ticks:{color:"#8ea0c0"}}}}
+    });
+  }
+}
+
+document.getElementById("downloadReportBtn").addEventListener("click", ()=>{
+  if(!lastResult) return;
+  window.open(API+"/api/history/"+lastResult.id+"/report", "_blank");
+});
+
+// History
+async function loadHistory(){
+  const res = await fetch(API+"/api/history");
+  const rows = await res.json();
+  const body = document.getElementById("historyBody");
+  const empty = document.getElementById("historyEmpty");
+  body.innerHTML = "";
+  if(!rows.length){ empty.style.display="block"; return; }
+  empty.style.display = "none";
+  rows.forEach(r=>{
+    const v = verdictBadge(r.result.final_verdict);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><img class="thumb" src="${r.thumbnail||''}" /></td>
+      <td>#${r.id}</td>
+      <td>${r.filename}</td>
+      <td>${r.patient_label||"—"}</td>
+      <td>${new Date(r.created_at*1000).toLocaleString()}</td>
+      <td><span class="badge ${v.cls}">${v.label}</span></td>
+    `;
+    tr.addEventListener("click", ()=>window.open(API+"/api/history/"+r.id+"/report","_blank"));
+    body.appendChild(tr);
+  });
+}
+
+async function loadStats(){
+  const res = await fetch(API+"/api/stats");
+  const data = await res.json();
+  document.getElementById("stat-total").textContent = data.total_scans;
+  let tumors = 0, counts = {};
+  for(const [verdict, n] of Object.entries(data.verdict_counts)){
+    if(verdict.startsWith("tumor_detected_") && verdict!=="tumor_detected_type_uncertain"){
+      tumors += n;
+      const type = verdict.replace("tumor_detected_","");
+      counts[type] = (counts[type]||0)+n;
+    }
+  }
+  document.getElementById("stat-tumors").textContent = tumors;
+  const common = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById("stat-common").textContent = common ? common[0] : "—";
+}
+
+loadStats();
+loadHistory();
+</script>
+</body>
+</html>

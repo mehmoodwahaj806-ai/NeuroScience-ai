@@ -1,0 +1,18 @@
+{
+  "stage": 2,
+  "class_names": [
+    "glioma",
+    "meningioma",
+    "pituitary"
+  ],
+  "temperature": 0.6971502304077148,
+  "decision_threshold": 0.5,
+  "ood_stats": {
+    "energy_mean": -2.500490188598633,
+    "energy_std": 0.9127199053764343,
+    "energy_low_cutoff": -5.238649904727936,
+    "energy_high_cutoff": 0.23766952753067017
+  },
+  "n_validation_samples": 1434,
+  "note": "Calibration temperature fit on the winning-class logit vs. top-1 correctness. Stage 2 OOD energy is calculated from all class logits using the same energy calculation used during inference."
+}

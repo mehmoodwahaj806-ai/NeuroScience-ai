@@ -1,0 +1,11 @@
+architecture: efficientnet_b0
+image_size:
+- 224
+- 224
+num_classes: 1
+task: binary
+loss: bce
+threshold:
+  min_specificity: 0.9
+  objective: max_sensitivity_at_min_specificity
+  optimize_on: validation

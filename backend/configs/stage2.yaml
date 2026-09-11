@@ -1,0 +1,11 @@
+architecture: efficientnet_b0
+image_size:
+- 224
+- 224
+num_classes: 3
+task: multiclass
+class_names:
+- glioma
+- meningioma
+- pituitary
+loss: weighted_ce

@@ -1,0 +1,19 @@
+{
+  "stage": 1,
+  "temperature": 1.3335334062576294,
+  "decision_threshold": 0.04464646464646465,
+  "threshold_selection": {
+    "threshold": 0.04464646464646465,
+    "method": "max_sensitivity_at_min_specificity",
+    "min_specificity_constraint": 0.9,
+    "achieved_sensitivity": 0.99860529986053,
+    "achieved_specificity": 0.9029411764705882
+  },
+  "ood_stats": {
+    "energy_mean": -10.734548568725586,
+    "energy_std": 6.794402599334717,
+    "energy_low_cutoff": -31.117756366729736,
+    "energy_high_cutoff": 9.648659229278564
+  },
+  "n_validation_samples": 1774
+}
