@@ -1,129 +1,394 @@
-# NeuroScan AI — Brain MRI Screening Dashboard
+# 🧠 NeuroScan AI
 
-A full-stack web app wrapping your two-stage EfficientNet-B0 brain MRI tumor
-classifier (originally packaged as a Windows `.exe`) in a real FastAPI backend
-and a browser dashboard — no Windows/desktop app required, deployable to any
-Linux server, VPS, or platform like Render/Railway/Fly.io.
+### Intelligent Brain MRI Screening & Tumor Classification
 
-## What this is
+\<div align="center">
 
-- **Stage 1** (binary EfficientNet-B0): tumor vs. no-tumor, tuned for high
-  sensitivity (~99.9%) at ≥90% specificity, exactly as calibrated in your
-  original `stage1/deployment_bundle.json`.
-- **Stage 2** (3-class EfficientNet-B0): glioma / meningioma / pituitary,
-  only run if Stage 1 flags a tumor.
-- **OOD detection**: energy-based out-of-distribution check on both stages,
-  using the exact cutoffs from your original bundles, so non-MRI or garbage
-  input is flagged as "uncertain" instead of forced into a confident answer.
-- All thresholds, temperatures, and class names are read directly from your
-  original `deployment_bundle.json` files — this is a faithful re-implementation
-  of the original app's decision logic, running your original `.pt` weights.
+\<img src="[https://capsule-render.vercel.app/api?type=waving&color=0:020617,50:075985,100:06B6D4&height=200&section=header&text=NeuroScan%20AI&fontSize=55&fontColor=ffffff&animation=fadeIn&fontAlignY=38&desc=AI-Powered%20Brain%20MRI%20Screening%20System&descAlignY=60&descSize=18](https://capsule-render.vercel.app/api?type=waving\&color=0:020617,50:075985,100:06B6D4\&height=200\&section=header\&text=NeuroScan%20AI\&fontSize=55\&fontColor=ffffff\&animation=fadeIn\&fontAlignY=38\&desc=AI-Powered%20Brain%20MRI%20Screening%20System\&descAlignY=60\&descSize=18)" width="100%" />
 
-## Project structure
+**A two-stage deep learning system designed to bring intelligent MRI screening into an accessible web-based environment.**
 
+\<br/>
+
+
+
+
+
+\
+
+
+
+\
+
+
+\</div>
+
+---
+
+## 🔬 Overview
+
+**NeuroScan AI** is a deep learning-based brain MRI screening application that combines two EfficientNet-B0 models in a sequential classification pipeline.
+
+Rather than relying on a single classifier, the system uses a two-stage approach:
+
+- **Stage 1:** Screens MRI images for tumor presence or absence.
+- **Stage 2:** Classifies detected tumors into glioma, meningioma, or pituitary tumor categories.
+- **OOD Detection:** Uses energy-based out-of-distribution detection to identify inputs that fall outside the expected data distribution.
+
+The original Windows executable has been reimplemented as a full-stack web application using FastAPI, allowing users to access the screening dashboard through a browser.
+
+> The application is intended for research and educational exploration, not independent clinical diagnosis.
+
+---
+
+## ⚡ Key Features
+
+\<table>
+\<tr>
+\<td width="50%">
+
+### 🧠 Two-Stage AI Pipeline
+
+Sequential EfficientNet-B0 models for binary screening and tumor classification.
+
+\</td>
+\<td width="50%">
+
+### 🛡️ OOD Detection
+
+Energy-based checks to flag unexpected or unsuitable inputs as uncertain.
+
+\</td>
+\</tr>
+\<tr>
+\<td width="50%">
+
+### 📊 Scan History
+
+SQLite-based storage for previous screening records.
+
+\</td>
+\<td width="50%">
+
+### 🌐 Web Dashboard
+
+Browser-accessible interface powered by a FastAPI backend.
+
+\</td>
+\</tr>
+\<tr>
+\<td width="50%">
+
+### ⚙️ Original Model Weights
+
+Uses the original trained `.pt` weights and deployment configuration bundles.
+
+\</td> \<td width="50%">
+
+### 🐳 Docker Support
+
+Containerized deployment for compatible Linux environments.
+
+\</td> \</tr> \</table>
+
+---
+
+## 🧬 AI Architecture
+
+NeuroScan AI uses a cascaded classification architecture to separate initial tumor screening from subsequent tumor-type classification.
+
+```mermaid
+flowchart TD
+    A["🧠 Brain MRI Image"] --> B["Image Preprocessing"]
+    B --> C["Stage 1: EfficientNet-B0"]
+    C --> D{"OOD Check"}
+    D -->|"Uncertain"| U["⚠️ Uncertain Input"]
+    D -->|"In Distribution"| E{"Tumor Detected?"}
+    E -->|"No"| F["No Tumor Detected"]
+    E -->|"Yes"| G["Stage 2: EfficientNet-B0"]
+    G --> H{"OOD Check"}
+    H -->|"Uncertain"| U
+    H -->|"In Distribution"| I["Tumor Classification"]
+    I --> J["Glioma"]
+    I --> K["Meningioma"]
+    I --> L["Pituitary"]
 ```
-app/
-├── backend/
-│   ├── main.py              # FastAPI app: /api/predict, /api/history, /api/stats, /api/history/{id}/report
-│   ├── inference.py         # Preprocessing + 2-stage model pipeline
-│   ├── database.py          # SQLite scan history storage
-│   ├── requirements.txt
-│   ├── configs/             # Copied from your original bundle (common/stage1/stage2 yaml)
-│   ├── model_weights/
-│   │   ├── stage1/          # stage1_efficientnet_b0_best.pt + deployment_bundle.json
-│   │   └── stage2/          # stage2_efficientnet_b0_best.pt + deployment_bundle.json
-│   └── history.db           # created automatically on first run
-└── frontend/
-    └── index.html           # Dashboard UI (vanilla JS + Chart.js, no build step)
+
+### Stage 01 — Binary Screening
+
+**EfficientNet-B0 | Tumor vs. No Tumor**
+
+The first model evaluates the MRI image and determines whether it should proceed to further tumor classification.
+
+- Binary classification.
+- High-sensitivity threshold calibration.
+- Original deployment temperature and threshold configuration.
+- Energy-based OOD checking.
+
+### Stage 02 — Tumor Classification
+
+**EfficientNet-B0 | Three-Class Classification**
+
+Activated only when Stage 1 flags a potential tumor.
+
+| Class | Classification |
+| ----- | -------------- |
+| 01    | Glioma         |
+| 02    | Meningioma     |
+| 03    | Pituitary      |
+
+### Out-of-Distribution Detection
+
+The system incorporates energy-based OOD checks at both stages.
+
+Unexpected inputs are flagged as uncertain instead of being automatically forced into a tumor category.
+
+---
+
+## 📈 Model Configuration & Performance
+
+The original Stage 1 deployment bundle contains calibration targeting approximately:
+
+| Metric             | Configuration              |
+| ------------------ | -------------------------- |
+| Target sensitivity | \~99.9%                    |
+| Target specificity | ≥90%                       |
+| Architecture       | EfficientNet-B0            |
+| Classification     | Binary                     |
+| Calibration        | Original deployment bundle |
+
+\<details> \<summary>\<b>Technical implementation details\</b>\</summary>
+
+- Original Stage 1 and Stage 2 `.pt` model weights.
+- Original `deployment_bundle.json` configuration files.
+- Temperature scaling and classification thresholds loaded from the original bundles.
+- Energy-based OOD cutoffs loaded from deployment configurations.
+- Preprocessing reconstructed from `common.yaml`.
+
+**Evaluation note:** The performance figures above describe the original bundle's validation configuration. They have not been independently re-established through a new held-out test evaluation of this web implementation.
+
+\</details>
+
+---
+
+## 🛠️ Technology Stack
+
+\<div align="center">
+
+### Programming Languages
+
+\<img src="[https://skillicons.dev/icons?i=python,js,html,css,sqlite](https://skillicons.dev/icons?i=python,js,html,css,sqlite)" />
+
+### AI & Deep Learning
+
+\<img src="[https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white](https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge\&logo=pytorch\&logoColor=white)" /> \<img src="[https://img.shields.io/badge/EfficientNet-B0-2563EB?style=for-the-badge](https://img.shields.io/badge/EfficientNet-B0-2563EB?style=for-the-badge)" /> \<img src="[https://img.shields.io/badge/Computer_Vision-0F766E?style=for-the-badge&logo=opencv&logoColor=white](https://img.shields.io/badge/Computer_Vision-0F766E?style=for-the-badge\&logo=opencv\&logoColor=white)" />
+
+### Backend & Deployment
+
+\<img src="[https://skillicons.dev/icons?i=fastapi,docker,git,github](https://skillicons.dev/icons?i=fastapi,docker,git,github)" />
+
+\</div>
+
+| Technology      | Purpose                              |
+| --------------- | ------------------------------------ |
+| Python          | Core application and model inference |
+| PyTorch         | Deep learning framework              |
+| EfficientNet-B0 | MRI classification architecture      |
+| FastAPI         | Backend and API endpoints            |
+| JavaScript      | Dashboard interactions               |
+| HTML & CSS      | Frontend interface                   |
+| Chart.js        | Data visualization                   |
+| SQLite          | Scan history storage                 |
+| Docker          | Containerized deployment             |
+
+---
+
+## 🖥️ Application Architecture
+
+```mermaid
+flowchart LR
+    A["Browser Dashboard"] <-->|HTTP| B["FastAPI Backend"]
+    B --> C["Inference Pipeline"]
+    C --> D["Stage 1 Model"]
+    C --> E["Stage 2 Model"]
+    B <--> F["SQLite Database"]
+    C --> G["Prediction Results"]
+    G --> A
 ```
 
-## Running locally
+### API Endpoints
+
+| Endpoint                       | Function                        |
+| ------------------------------ | ------------------------------- |
+| `POST /api/predict`            | Upload and analyze an MRI image |
+| `GET /api/history`             | Retrieve previous scans         |
+| `GET /api/stats`               | Retrieve dashboard statistics   |
+| `GET /api/history/{id}/report` | Retrieve a scan report          |
+
+---
+
+## 📂 Project Structure
+
+```text
+NeuroScan-AI/
+│
+├── app/
+│   ├── backend/
+│   │   ├── main.py
+│   │   ├── inference.py
+│   │   ├── database.py
+│   │   ├── requirements.txt
+│   │   │
+│   │   ├── configs/
+│   │   │   ├── common.yaml
+│   │   │   ├── stage1/
+│   │   │   └── stage2/
+│   │   │
+│   │   └── model_weights/
+│   │       ├── stage1/
+│   │       │   ├── stage1_efficientnet_b0_best.pt
+│   │       │   └── deployment_bundle.json
+│   │       │
+│   │       └── stage2/
+│   │           ├── stage2_efficientnet_b0_best.pt
+│   │           └── deployment_bundle.json
+│   │
+│   └── frontend/
+│       └── index.html
+│
+├── Dockerfile
+└── README.md
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Python 3.11 or newer.
+- Git.
+- Docker (optional).
+
+### 1. Clone the Repository
 
 ```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 8000
-```
-
-Then open `http://localhost:8000` — the dashboard is served directly by the
-same FastAPI app (no separate frontend server needed).
-
-## How a user runs the GitHub version
-
-After cloning the repository, users can run the complete app with Docker:
-
-```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git
+git clone https://github.com/mehmoodwahaj806-ai/YOUR_REPOSITORY.git
 cd YOUR_REPOSITORY
-docker build -t neuroscan-ai .
-docker run --rm -p 8000:8000 neuroscan-ai
 ```
 
-While the container is running, open a web browser and enter
-`http://localhost:8000` in the address bar. The browser connects to the
-FastAPI server, which serves both the dashboard and the `/api` endpoints.
-
-Users without Docker can install Python 3.11 or newer and run:
+### 2. Install Dependencies
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git
-cd YOUR_REPOSITORY
-python -m pip install -r backend/requirements.txt
-cd backend
+python -m pip install -r app/backend/requirements.txt
+```
+
+### 3. Start the Backend
+
+```bash
+cd app/backend
 python -m uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
-They then open `http://127.0.0.1:8000` in a web browser. Do not open
-`frontend/index.html` directly with `file://`, because the dashboard needs the
-running FastAPI server to process uploads and provide the API responses.
+### 4. Open the Dashboard
 
-## Deploying
+Navigate to:
 
-This is a single deployable unit: one Python process serves both the API and
-the static dashboard. It will run as-is on:
-- A VPS (DigitalOcean, Linode, Hetzner, AWS EC2) behind nginx/Caddy as a
-  reverse proxy, with `uvicorn` run via `systemd` or inside a `screen`/`tmux`.
-- Render / Railway / Fly.io: point the build at `backend/`, install
-  `requirements.txt`, run `uvicorn main:app --host 0.0.0.0 --port $PORT`.
-- Docker: a minimal Dockerfile based on `python:3.11-slim`, installing
-  `requirements.txt` and running the same uvicorn command, works unchanged.
+```text
+http://127.0.0.1:8000
+```
 
-**GPU note:** inference runs on CPU by default and works fine for single-image
-requests. If you deploy on a GPU instance, `inference.py` will automatically
-use CUDA if `torch.cuda.is_available()`.
+The FastAPI application serves both the frontend dashboard and the backend API.
 
-## Important — read before showing this to anyone else
+---
 
-This reproduces your model's outputs faithfully, but a few things are
-worth being clear-eyed about before calling it "done":
+## 🐳 Docker Deployment
 
-1. **It is not a validated medical device.** The dashboard displays a
-   disclaimer for this reason — keep it. Regulatory clearance (e.g. FDA
-   510(k) or equivalent) is a completely different, much longer process than
-   building the software.
-2. **No independent test-set evaluation was done here.** The sensitivity/
-   specificity numbers shown come from your original bundle's validation
-   run, not from a fresh evaluation against held-out data. If you haven't
-   already, run this pipeline against a labeled test set you trust before
-   relying on the numbers.
-3. **Preprocessing had to be reconstructed from `common.yaml`.** I matched
-   resize, percentile clipping, grayscale handling, and normalization exactly
-   as configured, with one approximation: PIL doesn't have a literal "area"
-   interpolation mode, so bilinear resize is used instead. For 224×224
-   downsampling of MRI slices the visual difference is generally negligible,
-   but if you have the original training/eval code, it's worth a quick
-   side-by-side check against a few known images to confirm outputs match
-   bit-for-bit.
-4. **History is local SQLite**, fine for a single-instance deployment or
-   internal tool; if you expect concurrent multi-user traffic at scale,
-   swap it for Postgres before going further.
+Build the Docker image:
 
-## Where this fits in the current ML landscape
+```bash
+docker build -t neuroscan-ai .
+```
 
-Two-stage cascades like this (cheap screen → expensive specialist model) are
-increasingly the standard pattern for medical imaging triage tools, because
-they let you tune sensitivity and specificity independently at each stage —
-exactly what your Stage 1 threshold does. Energy-based OOD detection (used
-here) is a lightweight, increasingly common way to make classifiers safer in
-deployment without retraining — worth knowing about if you build more of
-these, since it generalizes to any classifier with logits, not just this one.
+Run the container:
+
+```bash
+docker run --rm -p 8000:8000 neuroscan-ai
+```
+
+Open:
+
+```text
+http://localhost:8000
+```
+
+The application can also be deployed to compatible Linux hosting platforms, VPS environments, and container services.
+
+---
+
+## ⚙️ Deployment Considerations
+
+| Component        | Implementation      |
+| ---------------- | ------------------- |
+| Backend          | FastAPI + Uvicorn   |
+| Frontend         | Served by FastAPI   |
+| Database         | SQLite              |
+| Inference        | CPU by default      |
+| GPU              | CUDA when available |
+| Containerization | Docker              |
+
+For multi-user deployments with concurrent traffic, PostgreSQL is a more appropriate database option than local SQLite.
+
+---
+
+## 🔍 Important Technical Considerations
+
+1. **Clinical validation:** NeuroScan AI is a research and educational software project, not a validated medical device. Its output must not replace professional radiological interpretation.
+
+2. **Independent evaluation:** The original validation metrics have not been independently reproduced on a new held-out dataset for this implementation.
+
+3. **Preprocessing reconstruction:** Preprocessing was reconstructed from `common.yaml`. PIL bilinear interpolation is used as an approximation for the configured area interpolation, so exact equivalence with the original implementation has not been established.
+
+4. **Database scalability:** SQLite is suitable for local and single-instance use. Larger multi-user deployments should consider PostgreSQL.
+
+5. **Deployment security:** Public deployments should add authentication, upload validation, access controls, and secure handling of medical images before accepting real user data.
+
+---
+
+## 🔮 Future Development
+
+- [ ] Independent evaluation on a trusted held-out MRI dataset.
+- [ ] Side-by-side verification of preprocessing and model outputs.
+- [ ] More detailed prediction visualization.
+- [ ] Enhanced scan reporting and export functionality.
+- [ ] PostgreSQL integration for scalable deployment.
+- [ ] Authentication and secure user management.
+- [ ] Further exploration of MRI localization and segmentation.
+
+---
+
+## 👨‍💻 Author
+
+\<div align="center">
+
+**Wahaj Mehmood**
+
+Pre-Medical Student | AI & Healthcare Enthusiast | Aspiring Researcher
+
+Interested in the intersection of neuroscience, medical imaging, artificial intelligence, and healthcare innovation.
+
+
+
+---
+
+### 🧠 Exploring the Future of Medical AI
+
+*Where deep learning meets medical imaging.*
+
+\<img src="[https://capsule-render.vercel.app/api?type=waving&color=0:020617,50:075985,100:06B6D4&height=110&section=footer](https://capsule-render.vercel.app/api?type=waving\&color=0:020617,50:075985,100:06B6D4\&height=110\&section=footer)" width="100%" />
+
+\</div>
+
+---
+
+\<sub>Disclaimer: NeuroScan AI is an experimental research and educational project. It is not intended for clinical diagnosis, treatment decisions, or emergency medical use.\</sub>
